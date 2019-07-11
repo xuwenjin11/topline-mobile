@@ -42,6 +42,7 @@
 
 <script>
 import { login } from '@/api/user.js'
+
 export default {
   name: 'LoginIndex',
   created () {

@@ -12,7 +12,10 @@
         </div> -->
         <!-- 标签栏 -->
         <van-tabs class="channel-tabs" v-model="active">
-            <van-tab title="推荐">
+            <van-tab
+            :title="channelsItem.name"
+            v-for="channelsItem in channels"
+            :key="channelsItem.id">
                 <van-pull-refresh v-model="isLoading" @refresh="onRefresh">
                 <van-list
                 v-model="loading"
@@ -29,9 +32,6 @@
                 </van-list>
                 </van-pull-refresh>
             </van-tab>
-            <van-tab title="热门话题">内容 2</van-tab>
-            <van-tab title="科技动态">内容 3</van-tab>
-            <van-tab title="区块链">内容 4</van-tab>
         </van-tabs>
         <!-- 底部导航 -->
         <van-tabbar>
@@ -44,8 +44,12 @@
 </template>
 
 <script>
+import { getUserChannels } from '@/api/channel.js'
 export default {
   name: 'HomeIndex',
+  created () {
+    this.loadChannels()
+  },
   data () {
     return {
       value: '',
@@ -53,10 +57,12 @@ export default {
       list: [],
       loading: false,
       finished: false,
-      isLoading: false
+      isLoading: false,
+      channels: []
     }
   },
   methods: {
+    // 下拉滑动刷新
     onLoad () {
       // 异步更新数据
       setTimeout(() => {
@@ -72,12 +78,36 @@ export default {
         }
       }, 500)
     },
+    // 下拉刷新
     onRefresh () {
       setTimeout(() => {
         this.$toast('刷新成功')
         this.isLoading = false
         // this.count++
       }, 500)
+    },
+    // 获取用户频道数据信息
+    async loadChannels () {
+      try {
+        // 判断用户是否登录
+        const { user } = this.$store.state
+        // 如果登录显示用户登录频道列表
+        if (user) {
+          this.channels = (await getUserChannels()).channels
+        } else {
+          // 如果没有登录，判断用户是否有本地存储数据，如果有数据将数据显示出来，如果没有获取频道列表
+          const localChannels = window.localStorage.getItem('channels')
+          // 如果有本地存储的频道列表，则使用本地的
+          if (localChannels) {
+            this.channels = localChannels
+          } else {
+            this.channels = (await getUserChannels()).channels
+            console.log(this.channels)
+          }
+        }
+      } catch (err) {
+        console.log(err)
+      }
     }
   }
 }
