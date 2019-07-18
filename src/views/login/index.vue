@@ -51,8 +51,8 @@ export default {
   data () {
     return {
       user: {
-        mobile: '',
-        code: ''
+        mobile: '18801185985',
+        code: '246810'
       },
       loginLoading: false,
       MyErrors: {
