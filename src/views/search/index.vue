@@ -2,7 +2,8 @@
      <div class="search-box">
         <!-- 顶部搜索 -->
         <div class="search-warp">
-            <van-icon name="arrow-left" @click="$router.back()"/>
+            <van-icon name="arrow-left" class="arrow-left" @click="$router.back()"/>
+            <form action="/">
             <van-search
             class="search-nav"
             clearable
@@ -10,23 +11,47 @@
             v-model="searchContent"
             show-action
             placeholder="请输入搜索内容"
+            @search="handleSearch(searchContent)"
              />
+            </form>
              <!-- 搜索联想 -->
-            <van-cell-group v-if="searchContent != 0">
+            <van-cell-group  v-if="searchText.length">
             <van-cell
             icon="search"
             v-for="item in searchText"
             :key="item"
-            :title="item.toLowerCase()"
-            />
+            @click="handleSearch(item)"
+            >
+            <!-- 显示搜索结果高亮 -->
+            <div slot="title" v-html="heightLight(item, searchContent)"></div>
+            </van-cell>
             </van-cell-group>
             <!-- 历史记录 -->
             <van-cell-group v-else>
             <van-cell title="历史记录">
                 <van-icon
+                v-if="!isDeleteShow"
                 slot="right-icon"
                 name="delete"
                 style="line-height: inherit;"
+                @click="isDeleteShow=true"
+                />
+                <div v-else>
+                  <span @click="serachHistories=[]">全部删除</span>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;
+                  <span @click="isDeleteShow=false">完成</span>
+                </div>
+                </van-cell>
+                <van-cell
+                v-for="(item,index) in serachHistories"
+                :key="item"
+                :title="item"
+                >
+               <van-icon
+                  v-show="isDeleteShow"
+                  slot="right-icon"
+                  name="close"
+                  style="line-height: inherit;"
+                  @click="serachHistories.splice(index, 1)"
                 />
             </van-cell>
             </van-cell-group>
@@ -43,7 +68,9 @@ export default {
   data () {
     return {
       searchContent: '', // 搜索v-model绑定的数据
-      searchText: []
+      searchText: [],
+      isDeleteShow: false,
+      serachHistories: JSON.parse(window.localStorage.getItem('serach-histories'))
     }
   },
   watch: {
@@ -56,16 +83,49 @@ export default {
       newVal = newVal.trim()
       const data = await userSearch(newVal)
       this.searchText = data.options
-    }, 500)
+    }, 500),
+    serachHistories: {
+      // 在监听属性里面进行对历史记录进行实时监听
+      handler () {
+        window.localStorage.setItem('serach-histories', JSON.stringify([...new Set(this.serachHistories)]))
+      },
+      deep: true // 建议引用类型数据都配置为深度监视
+    }
+  },
+  deactivated () {
+    this.$destroy()
   },
   methods: {
+    // 处理搜索内容高亮
+    heightLight (text, keyword) {
+      return text.toLowerCase().split(keyword).join(`<span style="color: red">${keyword}</span>`)
+    },
+    // 跳转到搜索结果页面
+    handleSearch (q) {
+      // console.log(q)
+      if (!q.length) {
+        return
+      }
+      // 对于历史数据进行数组去重操作，使用new Set()方法
+      // window.localStorage.setItem(
+      //   'serach-histories',
+      //   JSON.stringify([...new Set(this.serachHistories)])
+      // )
+      this.serachHistories.unshift(q)
+      this.$router.push({
+        name: 'search-result',
+        params: {
+          q
+        }
+      })
+    }
   }
 }
 </script>
 
 <style lang="less" scoped>
 .search-box{
-    .van-icon{
+    .arrow-left{
         float: left;
         padding-top: 22px;
         padding-left: 10px;
